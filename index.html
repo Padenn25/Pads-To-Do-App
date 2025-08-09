@@ -11,15 +11,16 @@
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- WICHTIG: zuerst deine Config laden -->
+  <!-- WICHTIG: zuerst deine Firebase-Config laden (liegt im Repo-Root) -->
   <script src="firebase-config.js"></script>
 
-  <!-- Firebase v10 (ES Modules) anhängen -->
+  <!-- Firebase SDK v10 (ES Modules) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
     import { getFirestore, doc, collection, addDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
+    // für den Babel-Block verfügbar machen
     window.firebase = {
       initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged,
       getFirestore, doc, collection, addDoc, setDoc, onSnapshot
@@ -31,187 +32,98 @@
     body { font-family: 'Inter', sans-serif; }
   </style>
 </head>
-  <script>
-  (function () {
-    const box = document.createElement('div');
-    Object.assign(box.style, {
-      position:'fixed',left:'8px',bottom:'8px',maxWidth:'92vw',zIndex:99999,
-      background:'rgba(0,0,0,.85)',color:'#fff',padding:'10px 12px',
-      font:'12px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-      borderRadius:'8px',whiteSpace:'pre-wrap',display:'none'
-    });
-    document.addEventListener('DOMContentLoaded',()=>document.body.appendChild(box));
-    function show(msg){box.style.display='block'; box.textContent = 'Fehler: ' + msg;}
-    window.addEventListener('error', e => show(e.message + (e.filename?'\n' + e.filename + ':' + e.lineno:'') ));
-    window.addEventListener('unhandledrejection', e => show((e.reason && e.reason.message) ? e.reason.message : String(e.reason)));
-  })();
-</script>
 <body class="bg-gray-900">
   <div id="root"></div>
 
-  <!-- Deine App -->
+  <!-- Mini-Fehler-Overlay: zeigt JS-Fehler unten links statt schwarzem Screen -->
+  <script>
+    (function () {
+      const box = document.createElement('div');
+      Object.assign(box.style, {
+        position:'fixed',left:'8px',bottom:'8px',maxWidth:'92vw',zIndex:99999,
+        background:'rgba(0,0,0,.85)',color:'#fff',padding:'10px 12px',
+        font:'12px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif',
+        borderRadius:'8px',whiteSpace:'pre-wrap',display:'none'
+      });
+      document.addEventListener('DOMContentLoaded',()=>document.body.appendChild(box));
+      function show(msg){box.style.display='block'; box.textContent = 'Fehler: ' + msg;}
+      window.addEventListener('error', e => show(e.message + (e.filename?'\n' + e.filename + ':' + e.lineno:'')));
+      window.addEventListener('unhandledrejection', e => show((e.reason && e.reason.message) ? e.reason.message : String(e.reason)));
+    })();
+  </script>
+
+  <!-- App (JSX via Babel) -->
   <script type="text/babel">
     const { useState, useEffect } = React;
-     // >>> FEHLER-GUARD (einfügen)
-  if (typeof __firebase_config === 'undefined') {
-    document.getElementById('root').innerHTML =
-      '<div style="padding:16px;color:#fff;font-family:system-ui">Fehler: <code>firebase-config.js</code> wurde nicht geladen. ' +
-      'Lege die Datei ins Repo-Root und binde sie im <head> via <code>&lt;script src="firebase-config.js"&gt;</code> ein.</div>';
-  } else {  } // <<< Ende FEHLER-GUARD
-</script>
-    // restlicher App-Code bleibt unverändert …
-    const {
-      initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged,
-      getFirestore, doc, collection, addDoc, setDoc, onSnapshot
-    } = window.firebase;
 
-    // Globale Variablen aus firebase-config.js
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : undefined;
+    // Guard: firebase-config.js muss geladen sein
+    if (typeof __firebase_config === 'undefined') {
+      document.getElementById('root').innerHTML =
+        '<div style="padding:16px;color:#fff">Fehler: <code>firebase-config.js</code> wurde nicht geladen. ' +
+        'Lege die Datei ins Repo-Root und binde sie im &lt;head&gt; via ' +
+        '<code>&lt;script src="firebase-config.js"&gt;&lt;/script&gt;</code> ein.</div>';
+    } else {
+      const {
+        initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged,
+        getFirestore, doc, collection, addDoc, setDoc, onSnapshot
+      } = window.firebase;
 
-    // Firebase initialisieren
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+      const firebaseConfig = JSON.parse(__firebase_config);
+      const appId = (typeof __app_id !== 'undefined') ? __app_id : 'pads-to-do';
+      const initialAuthToken = (typeof __initial_auth_token !== 'undefined') ? __initial_auth_token : undefined;
 
-    const categories = ['Alle', 'Arbeit', 'Zuhause', 'Freizeit', 'Administratives'];
-    const categoryColors = {
-      'Arbeit': 'bg-blue-500',
-      'Zuhause': 'bg-emerald-500',
-      'Freizeit': 'bg-purple-500',
-      'Administratives': 'bg-red-500',
-      'Default': 'bg-gray-500',
-    };
+      // Firebase init
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
 
-    const ToDoApp = () => {
-      const [tasks, setTasks] = useState([]);
-      const [newTaskText, setNewTaskText] = useState('');
-      const [isModalVisible, setModalVisible] = useState(false);
-      const [selectedTask, setSelectedTask] = useState(null);
-      const [dueDate, setDueDate] = useState('');
-      const [newCategory, setNewCategory] = useState('Arbeit');
-      const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('Alle');
-      const [userId, setUserId] = useState(null);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState(null);
+      const categories = ['Alle', 'Arbeit', 'Zuhause', 'Freizeit', 'Administratives'];
+      const categoryColors = {
+        'Arbeit': 'bg-blue-500',
+        'Zuhause': 'bg-emerald-500',
+        'Freizeit': 'bg-purple-500',
+        'Administratives': 'bg-red-500',
+        'Default': 'bg-gray-500',
+      };
 
-      // Auth einrichten
-      useEffect(() => {
-        const initializeFirebaseAuth = async () => {
-          try {
-            await (initialAuthToken
-              ? signInWithCustomToken(auth, initialAuthToken)
-              : signInAnonymously(auth));
-          } catch (e) {
-            console.error("Firebase auth error:", e);
-            setError("Fehler bei der Firebase-Authentifizierung.");
-          }
-        };
+      const ToDoApp = () => {
+        const [tasks, setTasks] = useState([]);
+        const [newTaskText, setNewTaskText] = useState('');
+        const [isModalVisible, setModalVisible] = useState(false);
+        const [selectedTask, setSelectedTask] = useState(null);
+        const [dueDate, setDueDate] = useState('');
+        const [newCategory, setNewCategory] = useState('Arbeit');
+        const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('Alle');
+        const [userId, setUserId] = useState(null);
+        const [loading, setLoading] = useState(true);
+        const [error, setError] = useState(null);
 
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-          setUserId(user ? user.uid : null);
-          setLoading(false);
-        });
-
-        initializeFirebaseAuth();
-        return () => unsubscribe();
-      }, []);
-
-      // Firestore-Listener
-      useEffect(() => {
-        if (!userId) return;
-        const tasksCollectionPath = \`artifacts/\${appId}/users/\${userId}/tasks\`;
-        const q = collection(db, tasksCollectionPath);
-
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
-          const todos = [];
-          querySnapshot.forEach((docSnap) => {
-            todos.push({ id: docSnap.id, ...docSnap.data() });
-          });
-          todos.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
-          setTasks(todos);
-        }, (e) => {
-          console.error("Error fetching tasks:", e);
-          setError("Aufgaben konnten nicht geladen werden.");
-        });
-
-        return () => unsubscribe();
-      }, [userId]);
-
-      const addTask = async () => {
-        if (!newTaskText.trim()) return;
-        if (!userId) { setError("Firebase ist noch nicht bereit."); return; }
-
-        try {
-          const priority = tasks.length > 0 ? (tasks[tasks.length - 1].priority ?? tasks.length) + 1 : 0;
-          const newTask = {
-            text: newTaskText,
-            priority,
-            category: newCategory,
-            isCompleted: false,
-            dueDate: dueDate || null,
-            createdAt: new Date().toISOString(),
+        // Auth
+        useEffect(() => {
+          const initAuth = async () => {
+            try {
+              await (initialAuthToken
+                ? signInWithCustomToken(auth, initialAuthToken)
+                : signInAnonymously(auth));
+            } catch (e) {
+              console.error("Firebase auth error:", e);
+              setError("Fehler bei der Firebase-Authentifizierung.");
+            }
           };
-          const tasksCollection = collection(db, \`artifacts/\${appId}/users/\${userId}/tasks\`);
-          await addDoc(tasksCollection, newTask);
-          setNewTaskText('');
-          setDueDate('');
-          setNewCategory('Arbeit');
-        } catch (e) {
-          console.error("Error adding task:", e);
-          setError("Aufgabe konnte nicht hinzugefügt werden.");
-        }
-      };
+          const unsub = onAuthStateChanged(auth, user => {
+            setUserId(user ? user.uid : null);
+            setLoading(false);
+          });
+          initAuth();
+          return () => unsub();
+        }, []);
 
-      const moveTask = async (taskId, direction) => {
-        if (!userId) { setError("Firebase ist noch nicht bereit."); return; }
-        const taskIndex = tasks.findIndex(t => t.id === taskId);
-        if (taskIndex === -1) return;
-
-        const newIndex = taskIndex + (direction === 'up' ? -1 : 1);
-        if (newIndex < 0 || newIndex >= tasks.length) return;
-
-        const taskToMove = tasks[taskIndex];
-        const taskToSwap = tasks[newIndex];
-
-        const docRef1 = doc(db, \`artifacts/\${appId}/users/\${userId}/tasks/\${taskToMove.id}\`);
-        const docRef2 = doc(db, \`artifacts/\${appId}/users/\${userId}/tasks/\${taskToSwap.id}\`);
-
-        try {
-          await setDoc(docRef1, { ...taskToMove, priority: newIndex });
-          await setDoc(docRef2, { ...taskToSwap, priority: taskIndex });
-        } catch (e) {
-          console.error("Error reordering tasks:", e);
-          setError("Priorität konnte nicht geändert werden.");
-        }
-      };
-
-      const openEditModal = (task) => {
-        setSelectedTask(task);
-        setDueDate(task.dueDate || '');
-        setModalVisible(true);
-      };
-
-      const saveTaskChanges = async () => {
-        if (!selectedTask) return;
-        if (!userId) { setError("Firebase ist noch nicht bereit."); return; }
-
-        try {
-          const taskDocRef = doc(db, \`artifacts/\${appId}/users/\${userId}/tasks/\${selectedTask.id}\`);
-          await setDoc(taskDocRef, { ...selectedTask, dueDate }, { merge: true });
-          setModalVisible(false);
-          setSelectedTask(null);
-        } catch (e) {
-          console.error("Error saving changes:", e);
-          setError("Änderungen konnten nicht gespeichert werden.");
-        }
-      };
-
-      const filteredTasks = tasks.filter(task =>
-        selectedCategoryFilter === 'Alle' || task.category === selectedCategoryFilter
-      );
-
-      return (
-        <div className="min-h-screen bg-gray-900
-
+        // Daten laden
+        useEffect(() => {
+          if (!userId) return;
+          const path = `artifacts/${appId}/users/${userId}/tasks`;
+          const q = collection(db, path);
+          const unsub = onSnapshot(q, qs => {
+            const todos = [];
+            qs.forEach(docSnap => todos.push({ id: docSnap.id, ...docSnap.data() }));
+            todos.sort((a,b) =
