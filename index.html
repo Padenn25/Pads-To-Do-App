@@ -24,25 +24,27 @@
   </style>
 
   <!-- Firebase SDK (ES-Module); wir hängen benötigte Funktionen an window.firebase -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, collection, addDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+ <!-- Firebase SDK (ES Modules) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+  import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+  import { getFirestore, doc, collection, addDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-    window.firebase = {
-      initializeApp,
-      getAuth,
-      signInAnonymously,
-      signInWithCustomToken,
-      onAuthStateChanged,
-      getFirestore,
-      doc,
-      collection,
-      addDoc,
-      setDoc,
-      onSnapshot
-    };
-  </script>
+  window.firebase = {
+    initializeApp,
+    getAuth,
+    signInAnonymously,
+    signInWithCustomToken,
+    onAuthStateChanged,
+    getFirestore,
+    doc,
+    collection,
+    addDoc,
+    setDoc,
+    onSnapshot
+  };
+</script>
+
 </head>
 <body class="bg-gray-900">
   <div id="root"></div>
