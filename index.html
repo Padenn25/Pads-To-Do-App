@@ -5,17 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Meine To-Do-Liste</title>
 
-  <!-- Tailwind CSS -->
+  <!-- Tailwind & React -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- React + ReactDOM (UMD) -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
-  <!-- Babel für JSX im Browser -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Deine Firebase-Config (muss im Repo-Root liegen) -->
+  <!-- WICHTIG: deine Firebase-Config laden (liegt im Repo-Root) -->
   <script src="firebase-config.js"></script>
 
   <style>
@@ -23,28 +19,17 @@
     body { font-family: 'Inter', sans-serif; }
   </style>
 
-  <!-- Firebase SDK (ES-Module); wir hängen benötigte Funktionen an window.firebase -->
- <!-- Firebase SDK (ES Modules) -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-  import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
-  import { getFirestore, doc, collection, addDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+  <!-- Firebase SDK (ES Modules) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+    import { getFirestore, doc, collection, addDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-  window.firebase = {
-    initializeApp,
-    getAuth,
-    signInAnonymously,
-    signInWithCustomToken,
-    onAuthStateChanged,
-    getFirestore,
-    doc,
-    collection,
-    addDoc,
-    setDoc,
-    onSnapshot
-  };
-</script>
-
+    window.firebase = {
+      initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged,
+      getFirestore, doc, collection, addDoc, setDoc, onSnapshot
+    };
+  </script>
 </head>
 <body class="bg-gray-900">
   <div id="root"></div>
