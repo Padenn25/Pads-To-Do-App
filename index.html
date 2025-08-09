@@ -52,6 +52,14 @@
   <!-- Deine App -->
   <script type="text/babel">
     const { useState, useEffect } = React;
+     // >>> FEHLER-GUARD (einfügen)
+  if (typeof __firebase_config === 'undefined') {
+    document.getElementById('root').innerHTML =
+      '<div style="padding:16px;color:#fff;font-family:system-ui">Fehler: <code>firebase-config.js</code> wurde nicht geladen. ' +
+      'Lege die Datei ins Repo-Root und binde sie im <head> via <code>&lt;script src="firebase-config.js"&gt;</code> ein.</div>';
+  } else {  } // <<< Ende FEHLER-GUARD
+</script>
+    // restlicher App-Code bleibt unverändert …
     const {
       initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged,
       getFirestore, doc, collection, addDoc, setDoc, onSnapshot
