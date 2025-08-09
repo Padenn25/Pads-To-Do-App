@@ -5,21 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Meine To-Do-Liste</title>
 
-  <!-- Tailwind & React -->
+  <!-- Tailwind + React + Babel -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- WICHTIG: deine Firebase-Config laden (liegt im Repo-Root) -->
+  <!-- WICHTIG: zuerst deine Config laden -->
   <script src="firebase-config.js"></script>
 
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
-    body { font-family: 'Inter', sans-serif; }
-  </style>
-
-  <!-- Firebase SDK (ES Modules) -->
+  <!-- Firebase v10 (ES Modules) anhängen -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
@@ -30,6 +25,11 @@
       getFirestore, doc, collection, addDoc, setDoc, onSnapshot
     };
   </script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+  </style>
 </head>
 <body class="bg-gray-900">
   <div id="root"></div>
