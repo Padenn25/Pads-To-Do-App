@@ -1,11 +1,17 @@
-// firebase-config.js
-window.__firebase_config = JSON.stringify({
-  apiKey: "DEIN_API_KEY",
-  authDomain: "DEIN_AUTH_DOMAIN",
-  projectId: "DEIN_PROJECT_ID",
-  storageBucket: "DEIN_STORAGE_BUCKET",
-  messagingSenderId: "DEINE_MESSAGING_SENDER_ID",
-  appId: "DEINE_APP_ID"
-});
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-window.__app_id = "pads-todo";
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyAfN9ydREP6wRzmQkpABAb3cTeKvFqtgIU",
+  authDomain: "pads-to-do-app.firebaseapp.com",
+  projectId: "pads-to-do-app",
+  storageBucket: "pads-to-do-app.firebasestorage.app",
+  messagingSenderId: "516258136911",
+  appId: "1:516258136911:web:dd15cb9b572c8a1c863b3a"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
