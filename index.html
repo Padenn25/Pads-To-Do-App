@@ -168,4 +168,129 @@
             }
           };
 
-          const openEditModal = (tas
+          const openEditModal = (task) => { setSelectedTask(task); setDueDate(task.dueDate || ''); setModalVisible(true); };
+          const saveTaskChanges = async () => {
+            if (!selectedTask) return;
+            if (!userId) { setError("Firebase ist noch nicht bereit."); return; }
+            try {
+              await setDoc(doc(db, `artifacts/${appId}/users/${userId}/tasks/${selectedTask.id}`), { ...selectedTask, dueDate }, { merge: true });
+              setModalVisible(false); setSelectedTask(null);
+            } catch (e) {
+              console.error("Error saving changes:", e);
+              setError("Änderungen konnten nicht gespeichert werden.");
+            }
+          };
+
+          const filteredTasks = tasks.filter(t => selectedCategoryFilter === 'Alle' || t.category === selectedCategoryFilter);
+
+          return (
+            <div className="min-h-screen bg-gray-900 text-white p-4">
+              <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 to-fuchsia-600"></div>
+              <div className="relative z-10 max-w-2xl mx-auto">
+                {loading ? (
+                  <div className="flex justify-center items-center h-screen"><p className="text-xl">App wird geladen...</p></div>
+                ) : error ? (
+                  <div className="flex justify-center items-center h-screen"><p className="text-xl text-red-200">{error}</p></div>
+                ) : (
+                  <>
+                    <header className="p-5 text-center">
+                      <h1 className="text-4xl font-extrabold tracking-wide mb-2">Meine To-Do-Liste</h1>
+                      <p className="text-xs text-white/70">Benutzer-ID: {userId}</p>
+                    </header>
+
+                    <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                      <input
+                        type="text"
+                        className="flex-1 bg-white/20 rounded-full px-6 py-3 text-lg text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-fuchsia-400"
+                        placeholder="Neue Aufgabe hinzufügen..."
+                        value={newTaskText}
+                        onChange={(e) => setNewTaskText(e.target.value)}
+                      />
+                      <select
+                        className="bg-white/20 rounded-full px-6 py-3 text-white focus:outline-none focus:ring-2 focus:ring-fuchsia-400"
+                        value={newCategory}
+                        onChange={(e) => setNewCategory(e.target.value)}
+                      >
+                        {categories.slice(1).map(cat => (
+                          <option key={cat} value={cat} className="bg-gray-800 text-white">{cat}</option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={addTask}
+                        className="bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-2xl font-bold rounded-full w-14 h-14 flex items-center justify-center transition duration-200 shadow-lg"
+                      >+</button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mb-8">
+                      {categories.map(cat => (
+                        <button
+                          key={cat}
+                          onClick={() => setSelectedCategoryFilter(cat)}
+                          className={`px-4 py-2 rounded-full text-sm font-semibold transition duration-200 ${
+                            selectedCategoryFilter === cat ? 'bg-white text-gray-900 shadow-inner' : 'bg-white/20 text-white hover:bg-white/30'
+                          }`}
+                        >{cat}</button>
+                      ))}
+                    </div>
+
+                    <div className="space-y-4">
+                      {filteredTasks.map(item => (
+                        <div key={item.id} className="flex items-center bg-white/15 rounded-xl p-4 shadow-lg">
+                          <div className="flex-1 cursor-pointer" onClick={() => { setSelectedTask(item); setDueDate(item.dueDate || ''); setModalVisible(true); }}>
+                            <p className="text-lg font-semibold text-white">{item.text}</p>
+                            <span className={`inline-block mt-2 px-3 py-1 text-xs font-bold text-white rounded-full ${categoryColors[item.category] || categoryColors['Default']}`}>
+                              {item.category}
+                            </span>
+                            {item.dueDate && <p className="text-sm text-white/70 mt-1">Fällig: {new Date(item.dueDate).toLocaleDateString()}</p>}
+                          </div>
+                          <div className="flex flex-row ml-4 space-x-2">
+                            <button onClick={() => moveTask(item.id, 'up')} className="bg-white/20 rounded-md w-8 h-8 flex items-center justify-center transition duration-200 hover:bg-white/30">
+                              <span className="text-white text-xl">▲</span>
+                            </button>
+                            <button onClick={() => moveTask(item.id, 'down')} className="bg-white/20 rounded-md w-8 h-8 flex items-center justify-center transition duration-200 hover:bg-white/30">
+                              <span className="text-white text-xl">▼</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {isModalVisible && selectedTask && (
+                      <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4">
+                        <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
+                          <h2 className="text-2xl font-bold text-gray-800 mb-4">Aufgabe bearbeiten</h2>
+                          <p className="text-lg text-gray-600 mb-4">{selectedTask.text}</p>
+                          <input
+                            type="text"
+                            className="w-full bg-gray-100 rounded-lg px-4 py-3 mb-4 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-fuchsia-400"
+                            placeholder="Fälligkeitsdatum (z.B. 2025-08-09)"
+                            value={dueDate}
+                            onChange={(e) => setDueDate(e.target.value)}
+                          />
+                          <div className="flex gap-4 mt-4">
+                            <button onClick={saveTaskChanges} className="flex-1 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold py-3 rounded-xl transition duration-200 shadow-md">Speichern</button>
+                            <button onClick={() => { setModalVisible(false); setSelectedTask(null); }} className="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 rounded-xl transition duration-200 shadow-md">Abbrechen</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(ToDoApp));
+      }
+    } catch (err) {
+      const box = document.createElement('pre');
+      box.style = 'position:fixed;left:8px;bottom:8px;max-width:92vw;z-index:99999;background:rgba(0,0,0,.85);color:#fff;padding:10px 12px;border-radius:8px;white-space:pre-wrap;';
+      box.textContent = 'Initialisierungsfehler:\n' + (err && err.stack ? err.stack : String(err));
+      document.body.appendChild(box);
+      throw err;
+    }
+  </script>
+</body>
+</html>
